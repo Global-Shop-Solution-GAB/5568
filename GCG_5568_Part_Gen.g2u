@@ -1,0 +1,67 @@
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare(String,"")
+	V.Local.sSql.Declare(String,"")
+	V.Local.sRet.Declare(String,"")
+	V.Local.iSeq.Declare(Long,0)
+	V.Local.sTemp.Declare(String,"")
+	V.Local.sPart.Declare(String,"")
+	
+	F.Intrinsic.Control.SelectCase(V.Caller.Hook)
+		F.Intrinsic.Control.Case(14540)
+			F.Intrinsic.String.Split(V.Passed.000001.Trim,"-",V.Local.sPart)	
+			F.Intrinsic.String.Build("Select rtrim(Part) as Part, rtrim(Seq) as Seq From GCG_5568_Prt_Gen_Seq Where Part = '{0}'",V.Local.sPart(0).Trim,V.Local.sSql)
+			F.ODBC.Connection!Con.OpenCompanyConnection
+			F.Data.DataTable.CreateFromSQL("PartSeq","con",V.Local.sSql)
+			F.Intrinsic.Control.If(V.DataTable.PartSeq.RowCount--,=,-1)
+				F.Data.DataTable.AddRow("PartSeq","Part",V.Local.sPart(0).Trim,"Seq","00001")
+				F.Intrinsic.String.Build("{0}-{1}",V.Local.sPart(0).Trim,"00-001",V.Local.sPart)
+				V.Passed.000001.Set(V.Local.sPart.Trim)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Math.Add(V.DataTable.PartSeq(V.DataTable.PartSeq.RowCount--).Seq!FieldValLong,1,V.Local.iSeq)
+				F.Intrinsic.String.Format(V.Local.iSeq,"00000",V.Local.sTemp)
+				F.Data.DataTable.SetValue("PartSeq",V.DataTable.PartSeq.RowCount--,"Seq",V.Local.sTemp)
+				V.Local.sTemp.RedimPreserve(0,1)
+				F.Intrinsic.String.Right(V.Local.sTemp(0),3,V.Local.sTemp(1))
+				F.Intrinsic.String.Left(V.Local.sTemp(0),2,V.Local.sTemp(0))
+				F.Intrinsic.String.Build("{0}-{1}-{2}",V.Local.sPart(0).Trim,V.Local.sTemp(0),V.Local.sTemp(1),V.Local.sPart)
+				V.Passed.000001.Set(V.Local.sPart.Trim)
+			F.Intrinsic.Control.EndIf
+		
+			F.Data.DataTable.SaveToDB("PartSeq","con","GCG_5568_Prt_Gen_Seq","Part",256,"Part@!@Part*!*Seq@!@Seq")
+			F.Data.DataTable.Close("PartSeq")
+			
+			F.ODBC.Connection!Con.Close
+			
+	F.Intrinsic.Control.EndSelect
+	
+	F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+		F.Intrinsic.String.Build("Project: {0}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}","",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.CallSub(Exit)
+	F.Intrinsic.Control.EndIf
+Function.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.Exit.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare(String,"")
+
+	F.Intrinsic.Control.End
+	
+	F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+		F.Intrinsic.String.Build("Project: {0}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}","",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndIf
+Function.Intrinsic.Control.EndTry
+Program.Sub.Exit.End
